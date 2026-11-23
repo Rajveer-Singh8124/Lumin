@@ -1,0 +1,11 @@
+{
+  "routes": [
+    { "path": "/", "title": "Lumin Optics" },
+    { "path": "/shop", "title": "Shop eyewear" },
+    { "path": "/account", "title": "Account" },
+    { "path": "/checkout", "title": "Checkout" },
+    { "path": "/admin", "title": "Admin catalog workspace" },
+    { "path": "/collection", "title": "Lumin collection" },
+    { "path": "/contact", "title": "Contact Lumin Optics" }
+  ]
+}
