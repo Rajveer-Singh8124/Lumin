@@ -32,12 +32,40 @@ import { buildWhatsAppUrl, clearAdminToken, clearUserSession, createOrder, getAd
 
 const money = (value) => `$${value.toFixed(2)}`;
 
+// --- SPA navigation helper ---
+const navigate = (path) => {
+  if (window.location.pathname === path) return;
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  window.scrollTo({ top: 0, behavior: 'instant' });
+};
+
+function Link({ to, className, children, ...rest }) {
+  return (
+    <a
+      href={to}
+      className={className}
+      onClick={(event) => {
+        // allow modifier-click / middle-click / new-tab to behave natively
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        event.preventDefault();
+        navigate(to);
+        rest.onClick?.(event);
+      }}
+      {...rest}
+    >
+      {children}
+    </a>
+  );
+}
+// -----------------------------
+
 function Logo({ compact = false }) {
   return (
-    <a className={`logo ${compact ? 'logo--compact' : ''}`} href="#top" aria-label="Lumin Optics home">
+    <Link className={`logo ${compact ? 'logo--compact' : ''}`} to="/" aria-label="Lumin Optics home">
       <span className="logo-mark"><span /><i /></span>
       {!compact && <span className="logo-word">Lumin<span>.</span></span>}
-    </a>
+    </Link>
   );
 }
 
@@ -281,7 +309,7 @@ function AdminSignIn({ onSignedIn }) {
     }
   };
 
-  return <div className="admin-auth-page"><div className="admin-auth-card"><a className="admin-back-link" href="/"><ArrowLeft size={15} /> Back to storefront</a><div className="admin-auth-mark"><LayoutDashboard size={22} /></div><span className="eyebrow">Lumin Optics / private access</span><h1>Welcome <em>back.</em></h1><p>Sign in to shape the catalog, offers, and frame details.</p><form onSubmit={submit}><label className="admin-field">Admin email<input type="email" autoComplete="username" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} placeholder="you@luminoptics.com" /></label><label className="admin-field">Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => { setPassword(event.target.value); setError(''); }} placeholder="Your password" /></label>{error && <p className="admin-form-error">{error}</p>}<button className="primary-button primary-button--wide" type="submit" disabled={pending}>{pending ? 'Signing in…' : 'Sign in to admin'} <LogIn size={15} /></button></form><small className="admin-auth-note">JWT session · expires after 30 minutes · credentials never stored in the browser</small></div></div>;
+  return <div className="admin-auth-page"><div className="admin-auth-card"><Link className="admin-back-link" to="/"><ArrowLeft size={15} /> Back to storefront</Link><div className="admin-auth-mark"><LayoutDashboard size={22} /></div><span className="eyebrow">Lumin Optics / private access</span><h1>Welcome <em>back.</em></h1><p>Sign in to shape the catalog, offers, and frame details.</p><form onSubmit={submit}><label className="admin-field">Admin email<input type="email" autoComplete="username" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} placeholder="you@luminoptics.com" /></label><label className="admin-field">Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => { setPassword(event.target.value); setError(''); }} placeholder="Your password" /></label>{error && <p className="admin-form-error">{error}</p>}<button className="primary-button primary-button--wide" type="submit" disabled={pending}>{pending ? 'Signing in…' : 'Sign in to admin'} <LogIn size={15} /></button></form><small className="admin-auth-note">JWT session · expires after 30 minutes · credentials never stored in the browser</small></div></div>;
 }
 
 function AdminPage() {
@@ -406,7 +434,7 @@ function AdminPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div className="admin-header-bar"><a className="admin-back-link" href="/"><ArrowLeft size={15} /> Back to storefront</a><div className="admin-header-actions"><span className="admin-badge"><LayoutDashboard size={14} /> {admin.email}</span><button className="admin-signout" onClick={() => { clearAdminToken(); setToken(''); setAdmin(null); }}><LogOut size={14} /> Sign out</button></div></div>
+        <div className="admin-header-bar"><Link className="admin-back-link" to="/"><ArrowLeft size={15} /> Back to storefront</Link><div className="admin-header-actions"><span className="admin-badge"><LayoutDashboard size={14} /> {admin.email}</span><button className="admin-signout" onClick={() => { clearAdminToken(); setToken(''); setAdmin(null); }}><LogOut size={14} /> Sign out</button></div></div>
         <div className="admin-header-copy"><div><span className="eyebrow eyebrow--dark">Catalog control / internal</span><h1>Make the edit <em>yours.</em></h1><p>Keep pricing, offers, and frame details in step with the Lumin point of view.</p></div><div className="admin-header-orbit"><span>LO</span><small>01 / catalog</small></div></div>
       </header>
 
@@ -422,14 +450,14 @@ function AdminPage() {
         </div>
       </main>
 
-      <footer className="admin-footer"><span>Lumin Optics / admin workspace</span><a href="/">Return to storefront <ArrowRight size={14} /></a></footer>
+      <footer className="admin-footer"><span>Lumin Optics / admin workspace</span><Link to="/">Return to storefront <ArrowRight size={14} /></Link></footer>
       {notice && <div className="toast"><Check size={16} /> {notice}</div>}
     </div>
   );
 }
 
 function PageHeader({ eyebrow, title, description }) {
-  return <header className="simple-page-header"><a className="simple-page-back" href="/"><ArrowLeft size={15} /> Lumin Optics</a><span className="eyebrow eyebrow--dark">{eyebrow}</span><h1>{title}</h1><p>{description}</p></header>;
+  return <header className="simple-page-header"><Link className="simple-page-back" to="/"><ArrowLeft size={15} /> Lumin Optics</Link><span className="eyebrow eyebrow--dark">{eyebrow}</span><h1>{title}</h1><p>{description}</p></header>;
 }
 
 function CollectionPage() {
@@ -437,14 +465,14 @@ function CollectionPage() {
   const [activeCategory, setActiveCategory] = useState('All frames');
   useEffect(() => { getProducts().then((items) => { if (items?.length) setCatalog(items); }); }, []);
   const collection = catalog.filter((product) => activeCategory === 'All frames' || product.category === activeCategory);
-  return <div className="simple-page"><PageHeader eyebrow="The Lumin collection / 06 frames" title={<>Find your <em>signature.</em></>} description="A considered collection of optical and sun frames, designed to stay in your orbit." /><main className="collection-main"><div className="collection-controls"><div className="category-tabs">{categories.map((category) => <button className={activeCategory === category ? 'is-active' : ''} key={category} onClick={() => setActiveCategory(category)}>{category}</button>)}</div><a className="underlined-button" href="/contact">Need help choosing? <ArrowRight size={15} /></a></div><div className="collection-grid">{collection.map((product) => <article className="collection-card" key={product.id}><div className="collection-card-image"><img src={product.image} alt={product.imageAlt} /><span className="product-badge">{product.badge}</span></div><div className="collection-card-copy"><div><span className="eyebrow">{product.collection} / {product.shape}</span><h2>{product.name}</h2><p>{product.description}</p></div><div className="collection-card-bottom"><strong>{money(product.price)}</strong><a className="whatsapp-link" href={buildWhatsAppUrl({ product })} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Ask on WhatsApp</a></div></div></article>)}</div></main><footer className="simple-page-footer"><a href="/">Back to the storefront <ArrowRight size={14} /></a><span>Built for your point of view.</span></footer></div>;
+  return <div className="simple-page"><PageHeader eyebrow="The Lumin collection / 06 frames" title={<>Find your <em>signature.</em></>} description="A considered collection of optical and sun frames, designed to stay in your orbit." /><main className="collection-main"><div className="collection-controls"><div className="category-tabs">{categories.map((category) => <button className={activeCategory === category ? 'is-active' : ''} key={category} onClick={() => setActiveCategory(category)}>{category}</button>)}</div><Link className="underlined-button" to="/contact">Need help choosing? <ArrowRight size={15} /></Link></div><div className="collection-grid">{collection.map((product) => <article className="collection-card" key={product.id}><div className="collection-card-image"><img src={product.image} alt={product.imageAlt} /><span className="product-badge">{product.badge}</span></div><div className="collection-card-copy"><div><span className="eyebrow">{product.collection} / {product.shape}</span><h2>{product.name}</h2><p>{product.description}</p></div><div className="collection-card-bottom"><strong>{money(product.price)}</strong><a className="whatsapp-link" href={buildWhatsAppUrl({ product })} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Ask on WhatsApp</a></div></div></article>)}</div></main><footer className="simple-page-footer"><Link to="/">Back to the storefront <ArrowRight size={14} /></Link><span>Built for your point of view.</span></footer></div>;
 }
 
 function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
   const submit = (event) => { event.preventDefault(); window.open(buildWhatsAppUrl(form), '_blank', 'noopener,noreferrer'); };
-  return <div className="simple-page"><PageHeader eyebrow="Lumin service / contact" title={<>Let’s find the <em>right frame.</em></>} description="Tell us what you’re looking for and our optical team will help you choose a shape, fit, or finish." /><main className="contact-main"><section className="contact-intro"><div className="contact-orbit"><MessageCircle size={30} /><span>We reply<br />on WhatsApp</span></div><span className="eyebrow">A direct line to the edit</span><h2>Questions look<br /><em>good</em> on you.</h2><p>Use the form and we’ll open a WhatsApp conversation with your message ready to send. You can ask about fit, prescription readiness, colour, delivery, or a particular frame.</p><div className="contact-notes"><span><strong>01</strong> Fit guidance</span><span><strong>02</strong> Frame details</span><span><strong>03</strong> Delivery help</span></div></section><form className="contact-form" onSubmit={submit}><label className="admin-field">Your name<input required value={form.name} onChange={update('name')} maxLength="100" placeholder="Alex Morgan" /></label><label className="admin-field">Email address<input required type="email" value={form.email} onChange={update('email')} maxLength="160" placeholder="alex@email.com" /></label><label className="admin-field">How can we help?<textarea required rows="6" value={form.message} onChange={update('message')} maxLength="800" placeholder="I’m looking for a lightweight everyday frame…" /></label><button className="primary-button primary-button--wide" type="submit">Open WhatsApp chat <MessageCircle size={16} /></button><small className="contact-fineprint">Your message opens in WhatsApp for your review before sending.</small></form></main><footer className="simple-page-footer"><a href="/collection">Explore the collection <ArrowRight size={14} /></a><a href="/">Back to storefront <ArrowRight size={14} /></a></footer></div>;
+  return <div className="simple-page"><PageHeader eyebrow="Lumin service / contact" title={<>Let’s find the <em>right frame.</em></>} description="Tell us what you’re looking for and our optical team will help you choose a shape, fit, or finish." /><main className="contact-main"><section className="contact-intro"><div className="contact-orbit"><MessageCircle size={30} /><span>We reply<br />on WhatsApp</span></div><span className="eyebrow">A direct line to the edit</span><h2>Questions look<br /><em>good</em> on you.</h2><p>Use the form and we’ll open a WhatsApp conversation with your message ready to send. You can ask about fit, prescription readiness, colour, delivery, or a particular frame.</p><div className="contact-notes"><span><strong>01</strong> Fit guidance</span><span><strong>02</strong> Frame details</span><span><strong>03</strong> Delivery help</span></div></section><form className="contact-form" onSubmit={submit}><label className="admin-field">Your name<input required value={form.name} onChange={update('name')} maxLength="100" placeholder="Alex Morgan" /></label><label className="admin-field">Email address<input required type="email" value={form.email} onChange={update('email')} maxLength="160" placeholder="alex@email.com" /></label><label className="admin-field">How can we help?<textarea required rows="6" value={form.message} onChange={update('message')} maxLength="800" placeholder="I’m looking for a lightweight everyday frame…" /></label><button className="primary-button primary-button--wide" type="submit">Open WhatsApp chat <MessageCircle size={16} /></button><small className="contact-fineprint">Your message opens in WhatsApp for your review before sending.</small></form></main><footer className="simple-page-footer"><Link to="/collection">Explore the collection <ArrowRight size={14} /></Link><Link to="/">Back to storefront <ArrowRight size={14} /></Link></footer></div>;
 }
 
 function AccountPage() {
@@ -461,7 +489,7 @@ function AccountPage() {
     return undefined;
   }, []);
 
-  return <div className="account-page"><PageHeader eyebrow="Your orbit / account" title={user ? <>Good to see you, <em>{user.name.split(' ')[0]}.</em></> : <>Make the edit <em>yours.</em></>} description={user ? `Signed in as ${user.email}. Your saved frames and orders stay close.` : 'Create an account or sign in to keep your Lumin frames, orders, and preferences together.'} /><main className="account-page-main">{checking ? <div className="account-page-card"><span className="eyebrow">Your orbit</span><h2>Checking your <em>session.</em></h2></div> : user ? <div className="account-page-card account-page-card--signed"><div className="account-avatar"><CircleUserRound size={34} /></div><span className="eyebrow">Member account</span><h2>{user.name}</h2><p>{user.email}</p><button className="secondary-button" onClick={() => { clearUserSession(); setUser(null); }}>Sign out <LogOut size={15} /></button></div> : <div className="account-page-card"><AccountAuth onAuthenticated={setUser} onClose={() => { window.location.href = '/'; }} /></div>}</main><footer className="simple-page-footer"><a href="/">Back to the storefront <ArrowRight size={14} /></a><a href="/collection">Explore the collection <ArrowRight size={14} /></a></footer></div>;
+  return <div className="account-page"><PageHeader eyebrow="Your orbit / account" title={user ? <>Good to see you, <em>{user.name.split(' ')[0]}.</em></> : <>Make the edit <em>yours.</em></>} description={user ? `Signed in as ${user.email}. Your saved frames and orders stay close.` : 'Create an account or sign in to keep your Lumin frames, orders, and preferences together.'} /><main className="account-page-main">{checking ? <div className="account-page-card"><span className="eyebrow">Your orbit</span><h2>Checking your <em>session.</em></h2></div> : user ? <div className="account-page-card account-page-card--signed"><div className="account-avatar"><CircleUserRound size={34} /></div><span className="eyebrow">Member account</span><h2>{user.name}</h2><p>{user.email}</p><button className="secondary-button" onClick={() => { clearUserSession(); setUser(null); }}>Sign out <LogOut size={15} /></button></div> : <div className="account-page-card"><AccountAuth onAuthenticated={setUser} onClose={() => navigate('/')} /></div>}</main><footer className="simple-page-footer"><Link to="/">Back to the storefront <ArrowRight size={14} /></Link><Link to="/collection">Explore the collection <ArrowRight size={14} /></Link></footer></div>;
 }
 
 function StorefrontApp() {
@@ -538,7 +566,7 @@ function StorefrontApp() {
       <div className="yellow-frame yellow-frame--left" /><div className="yellow-frame yellow-frame--right" />
       <header className="site-header">
         <div className="announcement"><span>Complimentary delivery on every frame</span><span className="announcement-center">The Lumin edit / 2024</span><span className="announcement-social">Follow along <Sparkles size={12} /></span></div>
-        <div className="nav-wrap"><button className="mobile-menu" aria-label="Open navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><Menu size={20} /></button><Logo /><nav className={`main-nav ${mobileNavOpen ? 'is-open' : ''}`}><a href="#shop" onClick={() => setMobileNavOpen(false)}>Shop</a><a href="/collection" onClick={() => setMobileNavOpen(false)}>Collection</a><a href="/contact" onClick={() => setMobileNavOpen(false)}>Contact</a></nav><div className="nav-actions"><IconButton label="Search" active={searchOpen} onClick={() => setSearchOpen((open) => !open)}><Search size={19} /></IconButton><IconButton label="Account" onClick={() => setDrawer('account')}><CircleUserRound size={19} /></IconButton><IconButton label="Saved frames" active={favorites.length > 0} onClick={() => { setToast(favorites.length ? `${favorites.length} saved frame${favorites.length === 1 ? '' : 's'} in your orbit` : 'Save a frame to find it here'); }}><Heart size={19} fill={favorites.length ? 'currentColor' : 'none'} /></IconButton><button className="bag-button" onClick={() => setDrawer('cart')}><ShoppingBag size={18} /><span>{totalItems}</span></button></div></div>
+        <div className="nav-wrap"><button className="mobile-menu" aria-label="Open navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><Menu size={20} /></button><Logo /><nav className={`main-nav ${mobileNavOpen ? 'is-open' : ''}`}><a href="#shop" onClick={() => setMobileNavOpen(false)}>Shop</a><Link to="/collection" onClick={() => setMobileNavOpen(false)}>Collection</Link><Link to="/contact" onClick={() => setMobileNavOpen(false)}>Contact</Link></nav><div className="nav-actions"><IconButton label="Search" active={searchOpen} onClick={() => setSearchOpen((open) => !open)}><Search size={19} /></IconButton><IconButton label="Account" onClick={() => setDrawer('account')}><CircleUserRound size={19} /></IconButton><IconButton label="Saved frames" active={favorites.length > 0} onClick={() => { setToast(favorites.length ? `${favorites.length} saved frame${favorites.length === 1 ? '' : 's'} in your orbit` : 'Save a frame to find it here'); }}><Heart size={19} fill={favorites.length ? 'currentColor' : 'none'} /></IconButton><button className="bag-button" onClick={() => setDrawer('cart')}><ShoppingBag size={18} /><span>{totalItems}</span></button></div></div>
         {searchOpen && <div className="search-bar"><Search size={18} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by shape, collection, or name" /><button onClick={() => { setQuery(''); setSearchOpen(false); }}><X size={17} /></button></div>}
       </header>
 
@@ -565,7 +593,7 @@ function StorefrontApp() {
         <section className="journal-section content-section" id="journal"><div className="journal-heading"><div><span className="eyebrow">From the journal</span><h2>Notes on <em>seeing.</em></h2></div><button className="underlined-button">View all notes <ArrowRight size={15} /></button></div><div className="journal-grid"><article className="journal-card journal-card--yellow"><span className="eyebrow">Field notes / 04</span><h3>How to choose<br />your next<br /><em>everyday frame.</em></h3><div className="journal-arrow"><ArrowUpRight /></div></article><article className="journal-card journal-card--photo"><img src="https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=900&q=88" alt="Eyeglasses resting on a book" /><div className="journal-overlay"><span className="eyebrow">Materials / 02</span><h3>The quiet<br />luxury of<br />a good fit.</h3></div></article><article className="journal-card journal-card--ink"><span className="eyebrow">Lumin service</span><h3>Try on from<br />wherever you<br /><em>are.</em></h3><p>Book a 15-minute virtual fit session with our optical team.</p><button className="underlined-button underlined-button--light">Book a fit <ArrowRight size={15} /></button></article></div></section>
       </main>
 
-      <footer className="site-footer"><div className="footer-top"><Logo /><p>A sharper way to see<br />the everyday.</p><div className="footer-actions"><a className="underlined-button underlined-button--light" href="/collection">Collection <ArrowUpRight size={15} /></a><a className="underlined-button underlined-button--light" href="/contact">Contact <ArrowUpRight size={15} /></a><a className="underlined-button underlined-button--light" href="/admin">Admin workspace <ArrowUpRight size={15} /></a></div></div><div className="footer-bottom"><span>© 2024 Lumin Optics</span><span>Privacy / Shipping / Returns</span><span>Designed for your point of view <span className="footer-dot" /></span></div></footer>
+      <footer className="site-footer"><div className="footer-top"><Logo /><p>A sharper way to see<br />the everyday.</p><div className="footer-actions"><Link className="underlined-button underlined-button--light" to="/collection">Collection <ArrowUpRight size={15} /></Link><Link className="underlined-button underlined-button--light" to="/contact">Contact <ArrowUpRight size={15} /></Link><Link className="underlined-button underlined-button--light" to="/admin">Admin workspace <ArrowUpRight size={15} /></Link></div></div><div className="footer-bottom"><span>© 2024 Lumin Optics</span><span>Privacy / Shipping / Returns</span><span>Designed for your point of view <span className="footer-dot" /></span></div></footer>
 
       {selectedProduct && <ProductModal product={selectedProduct} favorite={favorites.includes(selectedProduct.id)} onClose={() => setSelectedProduct(null)} onFavorite={toggleFavorite} onAdd={addToCart} />}
       {drawer === 'cart' && <CartDrawer cart={cart} onClose={() => setDrawer(null)} onChangeQuantity={changeQuantity} onRemove={removeFromCart} onCheckout={() => setDrawer('checkout')} />}
